@@ -18,7 +18,7 @@ private:
     unsigned int max_diags;
     unsigned int n_diags = 0;
 
-    bool expand(int i, int j);
+    bool extend(int i, int j);
     bool putDiagonal(int i, int j, Diagonal type, bool just_check);
     bool removeDiagonal(int i, int j);
 };
@@ -121,16 +121,16 @@ bool DiagonalGame::removeDiagonal(int i, int j) {
  * if that didn't work, erase both extensions
  * Do this recursively until you find a solution or every function call return false (which means no solution was found)
  *
- * A cell, row-col is expended when all cells immediately near it are being expanded
+ * A cell, row-col is expended when all cells immediately near it are being extended
  * this means that for each one of these cells we try to put a diagonal to see if it's a solution
  *
  * TODO: all the ones describe below, but also, try the inputs 6 (grid size), 20 (diagonals), (or 7 and 21, or 5 and 17, there are many options) the output will be 21 diagonals found, it's good but it'd be nice if the output is exactly 20
  * although I think that to achieve that an extra variable is needed to know and compare after each expansion if we've reached the desired # of diagonals
- * @param i, int the row of the diagonal to expand
- * @param j, int the col of the diagonal to expand
+ * @param i, int the row of the diagonal to extend
+ * @param j, int the col of the diagonal to extend
  * @return false if no solution has found (if the expansion is not a solution), true if the number of diagonals have been reached
  */
-bool DiagonalGame::expand(int i, int j) {
+bool DiagonalGame::extend(int i, int j) {
     if (i < 0 || j < 0 || i >= this->n || j >= this->n)
         return false;
 #if PRINT_INTERMEDIATE_STEPS
@@ -151,12 +151,12 @@ bool DiagonalGame::expand(int i, int j) {
             // try the row above this one, [i - 1, j - 1], [i - 1, j], [i - 1, j + 1]
             if (i > 0) {
                 if (this->putDiagonal(i - 1, k, diag_type)) {
-                    if (!this->expand(i - 1, k)) { // if could not expand on this side
+                    if (!this->extend(i - 1, k)) { // if could not extend on this side
                         // try from the other side of the board
                         i_other_side = this->n_from_0 - i + 1;
                         j_other_side = this->n_from_0 - k;
                         if (this->putDiagonal(i_other_side, j_other_side, diag_type)) {
-                            if (!this->expand(i_other_side, j_other_side)) {
+                            if (!this->extend(i_other_side, j_other_side)) {
                                 this->removeDiagonal(i_other_side, j_other_side); // undo changes
                                 this->removeDiagonal(i - 1, k); // undo changes
                             }
@@ -169,12 +169,12 @@ bool DiagonalGame::expand(int i, int j) {
             // try the row below this one, [i + 1, j - 1], [i + 1, j], [i + 1, j + 1]
             if (i < this->n) {
                 if (this->putDiagonal(i + 1, k, diag_type)) {
-                    if (!this->expand(i + 1, k)) {
+                    if (!this->extend(i + 1, k)) {
                         // try from the other side of the board
                         i_other_side = this->n_from_0 - i - 1;
                         j_other_side = this->n_from_0 - k;
                         if (this->putDiagonal(i_other_side, j_other_side, diag_type)) {
-                            if (!this->expand(i_other_side, j_other_side)) {
+                            if (!this->extend(i_other_side, j_other_side)) {
                                 this->removeDiagonal(i_other_side, j_other_side); // undo changes
                                 this->removeDiagonal(i + 1, k); // undo changes
                             }
@@ -187,12 +187,12 @@ bool DiagonalGame::expand(int i, int j) {
 
         // try the left side, [i, j - 1]
         if (j > 0) {
-            if (this->putDiagonal(i, j - 1, diag_type) && !this->expand(i, j - 1)) {
+            if (this->putDiagonal(i, j - 1, diag_type) && !this->extend(i, j - 1)) {
                 // try from the other side of the board
                 i_other_side = this->n_from_0 - i;
                 j_other_side = this->n_from_0 - j + 1;
                 if (this->putDiagonal(i_other_side, j_other_side, diag_type)) {
-                    if (!this->expand(i_other_side, j_other_side)) {
+                    if (!this->extend(i_other_side, j_other_side)) {
                         this->removeDiagonal(i_other_side, j_other_side);
                         this->removeDiagonal(i, j - 1); // undo changes
                     }
@@ -203,12 +203,12 @@ bool DiagonalGame::expand(int i, int j) {
 
         // try the right side, [i, j + 1]
         if (j < this->n) {
-            if (this->putDiagonal(i, j + 1, diag_type) && !this->expand(i, j + 1)) {
+            if (this->putDiagonal(i, j + 1, diag_type) && !this->extend(i, j + 1)) {
                 // try from the other side of the board
                 i_other_side = this->n_from_0 - i;
                 j_other_side = this->n_from_0 - j - 1;
                 if (this->putDiagonal(i_other_side, j_other_side, diag_type)) {
-                    if (!this->expand(i_other_side, j_other_side)) {
+                    if (!this->extend(i_other_side, j_other_side)) {
                         this->removeDiagonal(i_other_side, j_other_side);
                         this->removeDiagonal(i, j + 1); // undo changes
                     }
@@ -240,11 +240,11 @@ void DiagonalGame::printSolution() const {
 
 bool DiagonalGame::play(unsigned int i = 0, unsigned int j = 0, Diagonal type = FORWARD) {
     if (type != this->FORWARD && type != this->BACKWARD) {
-        std::cerr << "Invalid diagonal" << std::endl; // throw exception
+        std::cerr << "Invalid diagonal" << std::endl; // throw exception instead
         return false;
     }
     if (!(i <= this->n && j <= this->n)) {
-        std::cerr << "Invalid initial position" << std::endl;
+        std::cerr << "Invalid initial position" << std::endl; // also throw exception instead
         return false;
     }
 
@@ -252,7 +252,7 @@ bool DiagonalGame::play(unsigned int i = 0, unsigned int j = 0, Diagonal type = 
     ++(this->n_diags);
 
     auto time_start = std::chrono::high_resolution_clock::now();
-    bool result = this->expand(i, j);
+    bool result = this->extend(i, j);
     auto time_end = std::chrono::high_resolution_clock::now();
 
     std::cout << "The algorithm took: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << " ms" << std::endl;
